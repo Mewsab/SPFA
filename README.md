@@ -95,13 +95,26 @@ ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
 
 Do not push `.env` files to GitHub.
 
-## Backend Setup
+## Prerequisites
 
-Open a terminal in the backend folder:
+Before cloning and running this project, make sure the following tools and programming languages are installed on your system.
 
-```bash
-cd backend
-```
+### Required Programming Languages
+
+| Requirement | Recommended Version | Purpose |
+|---|---:|---|
+| Python | 3.12 or later | Used for the FastAPI backend, API services, database logic, AI integration, and backend dependencies. |
+| Node.js | 22.x LTS or later | Used to run the React + Vite frontend and install frontend packages through npm. |
+| SQL / MySQL | MySQL 8.0 or later | Used as the relational database for storing users, transactions, import batches, insights, and system data. |
+
+### Required Tools
+
+| Tool | Purpose |
+|---|---|
+| Git | Required to clone the repository and manage version control. |
+| MySQL Server | Required to host the local SPFA database. |
+| MySQL Workbench or VS Code SQL tools | Optional, but useful for viewing and managing database tables. |
+| VS Code | Recommended code editor for working with both backend and frontend files. |
 
 Create and activate a virtual environment:
 
