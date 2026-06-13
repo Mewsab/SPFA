@@ -116,6 +116,12 @@ Before cloning and running this project, make sure the following tools and progr
 | MySQL Workbench or VS Code SQL tools | Optional, but useful for viewing and managing database tables. |
 | VS Code | Recommended code editor for working with both backend and frontend files. |
 
+## Backend Setup
+
+Open a terminal in the backend folder:
+
+cd backend
+
 Create and activate a virtual environment:
 
 ```bash
