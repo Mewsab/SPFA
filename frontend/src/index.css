@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+:root {
+  color: #cbd5e1;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at 92% 10%, rgba(103, 232, 249, 0.08), transparent 24%),
+    #020617;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --spfa-bg: #020617;
+  --spfa-bg-deep: #020617;
+  --spfa-heading: #ffffff;
+  --spfa-body: #cbd5e1;
+  --spfa-body-soft: #94a3b8;
+  --spfa-muted: #64748b;
+  --spfa-accent: rgba(103, 232, 249, 0.14);
+  --spfa-accent-strong: rgba(103, 232, 249, 0.35);
+  --spfa-accent-solid: #38bdf8;
+  --spfa-accent-gradient: linear-gradient(135deg, #0891b2, #38bdf8);
+  --spfa-info: #67e8f9;
+  --spfa-success: #22c55e;
+  --spfa-warning: #f59e0b;
+  --spfa-danger: #f43f5e;
+  --spfa-surface: rgba(255, 255, 255, 0.04);
+  --spfa-surface-strong: rgba(255, 255, 255, 0.06);
+  --spfa-border: rgba(103, 232, 249, 0.18);
+  --spfa-border-accent: rgba(103, 232, 249, 0.32);
+  --spfa-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--spfa-body);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at 92% 10%, rgba(103, 232, 249, 0.08), transparent 24%),
+    #020617;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::placeholder {
+  color: var(--spfa-muted);
+  opacity: 1;
+}

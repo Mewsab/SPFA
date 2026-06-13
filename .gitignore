@@ -1,0 +1,56 @@
+# .gitignore for Python projects
+
+# Ignore virtual environment directories
+venv/ 
+.env/
+
+# Ignore environment variable files
+.env
+backend/.env
+frontend/.env
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.session.sql
+SPFADB.session.sql
+
+# Ignore OS files
+.DS_Store
+
+# Python
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+node_modules/
+dist/
+
+# Ignore test cache and log files
+.pytest_cache/
+*.log
+
+# Ignore Python cache directories
+__pycache__/
+*.pyc
+
+# Sample CSV files
+backend/sample_files/
+backend/sample_files/sample_transactions.csv
+backend/sample_files/*.csv
+
+# Local sample data generation scripts
+backend/scripts/generate_sample_transactions_csv.py
+
+# Backend tests / pytest files
+backend/tests/
+.pytest_cache/
+.coverage
+htmlcov/
