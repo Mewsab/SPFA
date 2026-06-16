@@ -281,6 +281,25 @@ button:focus-visible {
   background: #f1f5f9;
 }
 
+.admin-status-active,
+.admin-status-inactive {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.admin-status-active {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.admin-status-inactive {
+  color: #be123c;
+  background: #ffe4e6;
+}
+
 .admin-error {
   border: 1px solid #fecdd3;
   border-radius: 7px;

@@ -20,6 +20,7 @@ class AdminUserResponse(BaseModel):
     last_name: str
     email: str
     role: str
+    is_active: bool
     phone_number: str | None = None
     occupation_type: str | None = None
 
@@ -28,6 +29,10 @@ class AdminUserResponse(BaseModel):
 
 class AdminUserRoleUpdate(BaseModel):
     role: Literal["user", "admin"]
+
+
+class AdminUserStatusUpdate(BaseModel):
+    is_active: bool
 
 
 class AdminImportBatchResponse(BaseModel):

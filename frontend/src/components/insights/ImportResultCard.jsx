@@ -46,7 +46,7 @@ function ImportResultCard({ result }) {
   ]
 
   return (
-    <section className="soft-panel h-full px-5 py-5 sm:px-6">
+    <section className="soft-panel px-5 py-5 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">

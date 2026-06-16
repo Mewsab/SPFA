@@ -73,6 +73,31 @@ def update_user_role(
     return user
 
 
+def update_user_status(
+    db: Session,
+    user_id: int,
+    is_active: bool,
+    current_admin: User,
+) -> User:
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if user.user_id == current_admin.user_id and not is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admins cannot deactivate their own account.",
+        )
+
+    user.is_active = is_active
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def list_import_batches(db: Session) -> list[dict]:
     rows = (
         db.query(ImportBatch, User.email)

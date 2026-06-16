@@ -9,12 +9,14 @@ from app.schemas.s_admin import (
     AdminOverviewResponse,
     AdminUserResponse,
     AdminUserRoleUpdate,
+    AdminUserStatusUpdate,
 )
 from app.services.admin_service import (
     get_admin_overview,
     list_import_batches,
     list_users,
     update_user_role,
+    update_user_status,
 )
 
 
@@ -43,6 +45,16 @@ def patch_user_role(
     current_admin: User = Depends(get_current_admin_user),
 ):
     return update_user_role(db, user_id, role_update.role, current_admin)
+
+
+@router.patch("/users/{user_id}/status", response_model=AdminUserResponse)
+def patch_user_status(
+    user_id: int,
+    status_update: AdminUserStatusUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+):
+    return update_user_status(db, user_id, status_update.is_active, current_admin)
 
 
 @router.get("/import-batches", response_model=list[AdminImportBatchResponse])

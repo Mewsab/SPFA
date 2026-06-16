@@ -12,6 +12,7 @@ import {
   getAdminOverview,
   getAdminUsers,
   updateAdminUserRole,
+  updateUserStatus,
 } from '../api/adminApi'
 import { removeToken } from '../utils/authStorage'
 
@@ -54,7 +55,9 @@ function AdminDashboard({ currentUser }) {
   const [usersMessage, setUsersMessage] = useState('')
   const [importBatchesMessage, setImportBatchesMessage] = useState('')
   const [roleUpdateMessage, setRoleUpdateMessage] = useState('')
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState('')
   const [activeRoleUpdateId, setActiveRoleUpdateId] = useState(null)
+  const [activeStatusUpdateId, setActiveStatusUpdateId] = useState(null)
   const [isAccessDenied, setIsAccessDenied] = useState(false)
 
   const handleUnauthorized = useCallback(() => {
@@ -77,7 +80,7 @@ function AdminDashboard({ currentUser }) {
         return
       }
 
-      setMessage(fallbackMessage)
+      setMessage(error.response?.data?.detail || fallbackMessage)
     },
     [handleUnauthorized],
   )
@@ -154,12 +157,29 @@ function AdminDashboard({ currentUser }) {
     try {
       setActiveRoleUpdateId(user.user_id)
       setRoleUpdateMessage('')
+      setStatusUpdateMessage('')
       await updateAdminUserRole(user.user_id, nextRole)
       await Promise.all([loadUsers(), loadOverview()])
     } catch (error) {
       handleApiError(error, setRoleUpdateMessage, 'Could not update user role.')
     } finally {
       setActiveRoleUpdateId(null)
+    }
+  }
+
+  const handleStatusUpdate = async (user) => {
+    const nextStatus = !user.is_active
+
+    try {
+      setActiveStatusUpdateId(user.user_id)
+      setStatusUpdateMessage('')
+      setRoleUpdateMessage('')
+      await updateUserStatus(user.user_id, nextStatus)
+      await loadUsers()
+    } catch (error) {
+      handleApiError(error, setStatusUpdateMessage, 'Could not update user status.')
+    } finally {
+      setActiveStatusUpdateId(null)
     }
   }
 
@@ -236,6 +256,7 @@ function AdminDashboard({ currentUser }) {
 
           {usersMessage ? <p className="admin-error mx-5 mt-4">{usersMessage}</p> : null}
           {roleUpdateMessage ? <p className="admin-error mx-5 mt-4">{roleUpdateMessage}</p> : null}
+          {statusUpdateMessage ? <p className="admin-error mx-5 mt-4">{statusUpdateMessage}</p> : null}
 
           <div className="overflow-x-auto">
             <table className="admin-table">
@@ -245,25 +266,28 @@ function AdminDashboard({ currentUser }) {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th>Occupation</th>
                   <th>Phone</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoadingUsers ? (
                   <tr>
-                    <td colSpan="7">Loading users...</td>
+                    <td colSpan="8">Loading users...</td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan="7">No users found.</td>
+                    <td colSpan="8">No users found.</td>
                   </tr>
                 ) : (
                   users.map((user) => {
                     const isCurrentAdmin = user.user_id === currentUser?.user_id
                     const isDemotingSelf = isCurrentAdmin && user.role === 'admin'
+                    const isDeactivatingSelf = isCurrentAdmin && user.is_active
                     const isUpdating = activeRoleUpdateId === user.user_id
+                    const isUpdatingStatus = activeStatusUpdateId === user.user_id
 
                     return (
                       <tr key={user.user_id}>
@@ -275,22 +299,42 @@ function AdminDashboard({ currentUser }) {
                             {user.role}
                           </span>
                         </td>
+                        <td>
+                          <span className={user.is_active ? 'admin-status-active' : 'admin-status-inactive'}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
                         <td>{user.occupation_type || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
                         <td>
-                          <button
-                            className={user.role === 'admin' ? 'admin-button-danger' : 'admin-button-primary'}
-                            type="button"
-                            disabled={isDemotingSelf || isUpdating}
-                            onClick={() => handleRoleUpdate(user)}
-                            title={isDemotingSelf ? 'You cannot remove your own admin role.' : undefined}
-                          >
-                            {isUpdating
-                              ? 'Updating...'
-                              : user.role === 'admin'
-                                ? 'Demote to User'
-                                : 'Promote to Admin'}
-                          </button>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className={user.role === 'admin' ? 'admin-button-danger' : 'admin-button-primary'}
+                              type="button"
+                              disabled={isDemotingSelf || isUpdating}
+                              onClick={() => handleRoleUpdate(user)}
+                              title={isDemotingSelf ? 'You cannot remove your own admin role.' : undefined}
+                            >
+                              {isUpdating
+                                ? 'Updating...'
+                                : user.role === 'admin'
+                                  ? 'Demote to User'
+                                  : 'Promote to Admin'}
+                            </button>
+                            <button
+                              className={user.is_active ? 'admin-button-danger' : 'admin-button-primary'}
+                              type="button"
+                              disabled={isDeactivatingSelf || isUpdatingStatus}
+                              onClick={() => handleStatusUpdate(user)}
+                              title={isDeactivatingSelf ? 'You cannot deactivate your own account.' : undefined}
+                            >
+                              {isUpdatingStatus
+                                ? 'Updating...'
+                                : user.is_active
+                                  ? 'Deactivate'
+                                  : 'Reactivate'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )

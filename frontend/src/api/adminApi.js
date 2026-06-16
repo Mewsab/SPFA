@@ -12,6 +12,10 @@ export function updateAdminUserRole(userId, role) {
   return axiosClient.patch(`/admin/users/${userId}/role`, { role })
 }
 
+export function updateUserStatus(userId, isActive) {
+  return axiosClient.patch(`/admin/users/${userId}/status`, { is_active: isActive })
+}
+
 export function getAdminImportBatches() {
   return axiosClient.get('/admin/import-batches')
 }

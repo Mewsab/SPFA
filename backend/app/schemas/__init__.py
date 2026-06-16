@@ -3,6 +3,7 @@ from app.schemas.s_admin import (
     AdminOverviewResponse,
     AdminUserResponse,
     AdminUserRoleUpdate,
+    AdminUserStatusUpdate,
 )
 from app.schemas.s_budget import (
     BudgetAlertLevel,
@@ -70,6 +71,7 @@ __all__ = [
     "AdminOverviewResponse",
     "AdminUserResponse",
     "AdminUserRoleUpdate",
+    "AdminUserStatusUpdate",
     "BudgetCreate",
     "BudgetAlertLevel",
     "BudgetChartDataItem",

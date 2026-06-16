@@ -1,8 +1,12 @@
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.s_user import UserCreate, Token
 from app.core.security import hash_password, verify_password, create_access_token
 from app.utils.roles import ROLE_USER
+
+INACTIVE_ACCOUNT_MESSAGE = "Account is deactivated. Please contact the administrator."
+
 
 def register_user(db: Session, user_data: UserCreate) -> User:
     existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -42,6 +46,11 @@ def login_user(db: Session, email: str, password: str):
     user = authenticate_user(db, email, password)
     if not user:
         return None
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=INACTIVE_ACCOUNT_MESSAGE,
+        )
     access_token = create_access_token(data={"sub": str(user.user_id)})
     
     return Token(access_token=access_token, token_type="bearer")

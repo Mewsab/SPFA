@@ -202,7 +202,7 @@ function AIBudgetingInsights() {
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-5">
+      <div className="w-full space-y-6">
         <section className="space-y-2">
           <h2 className="section-title">AI Budgeting Insights</h2>
           <p className="section-copy text-sm leading-7 sm:text-base">
@@ -222,18 +222,20 @@ function AIBudgetingInsights() {
           </div>
         ) : null}
 
-        <section className="grid gap-4 xl:grid-cols-2">
-          <FinancialHealthBanner summary={summary} />
+        <section className="space-y-5">
+          <div className="grid items-stretch gap-5 xl:grid-cols-2">
+            <FinancialHealthBanner summary={summary} />
 
-          <CSVUploadCard
-            onImportSuccess={handleImportSuccess}
-            onUnauthorized={handleUnauthorized}
-          />
+            <CSVUploadCard
+              onImportSuccess={handleImportSuccess}
+              onUnauthorized={handleUnauthorized}
+            />
+          </div>
+
+          <ImportResultCard result={importResult} />
+
+          {hasNoData ? <InsightEmptyState /> : null}
         </section>
-
-        <ImportResultCard result={importResult} />
-
-        {hasNoData ? <InsightEmptyState /> : null}
 
         <section className="soft-panel px-4 py-4 sm:px-5">
           <div className="flex flex-col gap-1 border-b pb-4" style={{ borderColor: 'var(--spfa-border)' }}>

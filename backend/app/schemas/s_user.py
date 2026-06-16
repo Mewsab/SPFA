@@ -55,6 +55,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     user_id: int
     role: str
+    is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -3,6 +3,7 @@ from app.services.admin_service import (
     list_import_batches,
     list_users,
     update_user_role,
+    update_user_status,
 )
 from app.services.auth_service import authenticate_user, login_user, register_user
 from app.services.budget_service import (
@@ -53,5 +54,6 @@ __all__ = [
     "register_user",
     "update_budget",
     "update_user_role",
+    "update_user_status",
     "update_transaction",
 ]

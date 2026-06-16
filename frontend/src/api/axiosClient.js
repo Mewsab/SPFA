@@ -2,21 +2,17 @@ import axios from 'axios'
 import { getToken } from '../utils/authStorage'
 
 const axiosClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-})
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
+});
 
 axiosClient.interceptors.request.use((config) => {
-  const token = getToken()
+  const token = getToken();
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  return config
-})
+  return config;
+});
 
-export default axiosClient
+export default axiosClient;
