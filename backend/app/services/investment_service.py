@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from datetime import date, timedelta
 import logging
 
 import requests
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query"
 REQUEST_TIMEOUT_SECONDS = 10
 TIME_SERIES_DAILY_KEY = "Time Series (Daily)"
+FALLBACK_HISTORY_PROVIDER = "fallback_demo"
 
 _INVESTMENT_OPTIONS = {
     "AAPL": InvestmentOption(symbol="AAPL", name="Apple Inc.", asset_type="stock"),
@@ -27,6 +29,34 @@ _INVESTMENT_OPTIONS = {
     "GOOGL": InvestmentOption(symbol="GOOGL", name="Alphabet Inc.", asset_type="stock"),
     "AMZN": InvestmentOption(symbol="AMZN", name="Amazon.com Inc.", asset_type="stock"),
     "TSLA": InvestmentOption(symbol="TSLA", name="Tesla Inc.", asset_type="stock"),
+}
+
+_FALLBACK_CLOSE_SERIES = {
+    "AAPL": [
+        188.42, 189.15, 190.08, 189.73, 191.24, 192.68, 193.11, 192.55, 194.02, 195.36,
+        196.18, 195.74, 197.29, 198.11, 197.66, 199.04, 200.38, 199.85, 201.22, 202.16,
+        201.71, 203.08, 204.32, 203.77, 205.14, 206.01, 205.46, 207.19, 208.04, 207.62,
+    ],
+    "MSFT": [
+        421.35, 423.28, 425.64, 424.92, 428.17, 430.06, 432.51, 431.74, 434.39, 436.82,
+        438.14, 437.66, 440.28, 442.91, 444.35, 443.72, 446.18, 448.56, 447.89, 450.21,
+        452.44, 451.87, 454.62, 456.03, 457.78, 456.94, 459.31, 461.05, 460.48, 462.26,
+    ],
+    "GOOGL": [
+        164.72, 165.34, 166.19, 165.91, 167.28, 168.04, 168.73, 168.36, 169.52, 170.41,
+        171.08, 170.76, 172.15, 173.02, 173.64, 173.21, 174.39, 175.18, 174.86, 176.27,
+        177.05, 177.62, 177.24, 178.51, 179.33, 180.07, 179.68, 181.14, 182.02, 181.57,
+    ],
+    "AMZN": [
+        178.25, 179.04, 180.37, 179.82, 181.46, 182.13, 183.58, 183.02, 184.74, 185.21,
+        186.62, 186.09, 187.48, 188.36, 189.12, 188.57, 190.04, 191.39, 190.83, 192.45,
+        193.18, 194.02, 193.56, 195.11, 196.34, 195.87, 197.28, 198.06, 199.31, 198.74,
+    ],
+    "TSLA": [
+        171.36, 174.82, 178.45, 176.11, 181.92, 185.38, 183.74, 189.56, 193.21, 190.84,
+        196.47, 201.33, 198.75, 204.62, 209.18, 206.44, 213.59, 218.36, 215.07, 222.81,
+        228.14, 224.63, 231.48, 237.92, 233.56, 240.17, 246.35, 242.04, 249.71, 245.88,
+    ],
 }
 
 
@@ -72,32 +102,49 @@ def get_stock_quote(symbol: str) -> InvestmentQuoteResponse:
 
 
 def get_stock_history(symbol: str) -> InvestmentHistoryResponse:
-    _log_history_request_start(symbol)
     option = _get_option(symbol)
-    payload = _call_alpha_vantage(
-        {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": option.symbol,
-            "outputsize": "compact",
-        }
-    )
+    _log_history_request_start(option.symbol)
+
+    try:
+        payload, _http_status = _request_alpha_vantage_payload(
+            {
+                "function": "TIME_SERIES_DAILY",
+                "symbol": option.symbol,
+                "outputsize": "compact",
+            }
+        )
+    except MarketDataNotConfiguredError:
+        logger.warning("Using fallback_demo history: missing Alpha Vantage API key")
+        return _fallback_history_response(option, "missing_api_key")
+    except MarketDataUnavailableError as exc:
+        logger.warning("Using fallback_demo history: %s", str(exc) or "market_data_unavailable")
+        return _fallback_history_response(option, str(exc) or "market_data_unavailable")
+
+    if not isinstance(payload, dict):
+        logger.warning("Using fallback_demo history: Alpha Vantage payload was not a JSON object")
+        return _fallback_history_response(option, "payload_not_object")
 
     error_key = _alpha_vantage_error_key(payload)
     if error_key:
-        logger.warning("Returning 503: Alpha Vantage returned %s", error_key)
-        raise MarketDataUnavailableError("Market data is temporarily unavailable.")
+        logger.warning("Using fallback_demo history: Alpha Vantage returned %s", error_key)
+        return _fallback_history_response(option, f"alpha_vantage_{error_key.lower().replace(' ', '_')}")
 
     time_series = payload.get(TIME_SERIES_DAILY_KEY)
     if not isinstance(time_series, Mapping):
-        logger.warning("Returning 503: Time Series (Daily) missing")
-        raise MarketDataUnavailableError("Market data is temporarily unavailable.")
+        logger.warning("Using fallback_demo history: Time Series (Daily) missing")
+        return _fallback_history_response(option, "time_series_daily_missing")
 
     logger.info(
         "Alpha Vantage daily records: count=%s first_dates=%s",
         len(time_series),
         list(time_series.keys())[:3],
     )
-    history = _parse_history_points(time_series)
+    try:
+        history = _parse_history_points(time_series)
+    except MarketDataUnavailableError:
+        logger.warning("Using fallback_demo history: parser exception")
+        return _fallback_history_response(option, "parser_exception")
+
     logger.info(
         "Parsed investment history: points=%s first_point=%s last_point=%s",
         len(history),
@@ -106,14 +153,43 @@ def get_stock_history(symbol: str) -> InvestmentHistoryResponse:
     )
 
     if not history:
-        logger.warning("Returning 503: parsed history is empty")
-        raise MarketDataUnavailableError("Market data is temporarily unavailable.")
+        logger.warning("Using fallback_demo history: parsed history is empty")
+        return _fallback_history_response(option, "parsed_history_empty")
 
     return InvestmentHistoryResponse(
         symbol=option.symbol,
         name=option.name,
         asset_type=option.asset_type,
         provider=settings.MARKET_API_PROVIDER,
+        history=history,
+    )
+
+
+def _fallback_history_response(option: InvestmentOption, reason: str) -> InvestmentHistoryResponse:
+    closes = _FALLBACK_CLOSE_SERIES[option.symbol]
+    start_date = date.today() - timedelta(days=len(closes) - 1)
+    history = [
+        InvestmentHistoryPoint(
+            date=(start_date + timedelta(days=index)).isoformat(),
+            close=close,
+        )
+        for index, close in enumerate(closes)
+    ]
+
+    logger.info(
+        "Fallback demo history generated: symbol=%s reason=%s points=%s first_point=%s last_point=%s",
+        option.symbol,
+        reason,
+        len(history),
+        history[0].model_dump(),
+        history[-1].model_dump(),
+    )
+
+    return InvestmentHistoryResponse(
+        symbol=option.symbol,
+        name=option.name,
+        asset_type=option.asset_type,
+        provider=FALLBACK_HISTORY_PROVIDER,
         history=history,
     )
 
@@ -132,7 +208,7 @@ def get_stock_history_debug_summary(symbol: str) -> dict:
             }
         )
     except MarketDataNotConfiguredError:
-        logger.warning("Returning 503: missing Alpha Vantage API key")
+        logger.warning("Debug history summary: missing Alpha Vantage API key")
         summary["debug_reason"] = "missing_api_key"
         return summary
     except MarketDataUnavailableError as exc:
@@ -195,12 +271,12 @@ def _request_alpha_vantage_payload(params: dict[str, str]) -> tuple[dict, int | 
 
     if settings.MARKET_API_PROVIDER != "alpha_vantage":
         if is_history_request:
-            logger.warning("Returning 503: provider is not alpha_vantage")
+            logger.warning("Alpha Vantage history unavailable: provider is not alpha_vantage")
         raise MarketDataUnavailableError("provider_not_alpha_vantage")
 
     if not settings.ALPHA_VANTAGE_API_KEY:
         if is_history_request:
-            logger.warning("Returning 503: missing Alpha Vantage API key")
+            logger.warning("Alpha Vantage history unavailable: missing Alpha Vantage API key")
         raise MarketDataNotConfiguredError("Market data service is not configured.")
 
     if is_history_request:
@@ -224,15 +300,15 @@ def _request_alpha_vantage_payload(params: dict[str, str]) -> tuple[dict, int | 
     except requests.RequestException as exc:
         if is_history_request:
             logger.warning(
-                "Returning 503: request exception type=%s status=%s",
+                "Alpha Vantage history request exception: type=%s status=%s",
                 exc.__class__.__name__,
                 getattr(getattr(exc, "response", None), "status_code", None),
             )
         raise MarketDataUnavailableError("request_exception") from exc
     except ValueError as exc:
         if is_history_request:
-            logger.exception(
-                "Returning 503: unexpected parser exception type=%s message=%s",
+            logger.warning(
+                "Alpha Vantage history JSON parse exception: type=%s message=%s",
                 exc.__class__.__name__,
                 exc,
             )
@@ -251,7 +327,7 @@ def _request_alpha_vantage_payload(params: dict[str, str]) -> tuple[dict, int | 
                 summary["has_error_message"],
             )
         else:
-            logger.warning("Returning 503: Alpha Vantage payload was not a JSON object")
+            logger.warning("Alpha Vantage history unavailable: payload was not a JSON object")
 
     return payload, http_status
 
@@ -277,14 +353,13 @@ def _parse_history_points(time_series: Mapping) -> list[InvestmentHistoryPoint]:
                 )
             )
         except MarketDataUnavailableError as exc:
-            logger.exception(
+            logger.warning(
                 "History parse failed: type=%s message=%s date=%s field=4. close value_present=%s",
                 exc.__class__.__name__,
                 exc,
                 day,
                 close_value is not None,
             )
-            logger.warning("Returning 503: unexpected parser exception")
             raise
 
     return history
