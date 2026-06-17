@@ -12,6 +12,7 @@ from app.services.investment_service import (
     MarketDataNotConfiguredError,
     MarketDataUnavailableError,
     get_investment_options,
+    get_stock_history_debug_summary,
     get_stock_history,
     get_stock_quote,
 )
@@ -72,4 +73,18 @@ def get_stock_history_endpoint(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Market data is temporarily unavailable.",
+        ) from exc
+
+
+@router.get("/debug/history/{symbol}")
+def get_stock_history_debug_endpoint(
+    symbol: str,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return get_stock_history_debug_summary(symbol)
+    except InvestmentSymbolNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Investment symbol is not supported.",
         ) from exc
